@@ -14,11 +14,19 @@ So, if a program using a major does not work anymore with another version from t
 The major 0 is a testing one
 '''
 
+# TODO:
+## Return sensors in a class
+## Manage cameras
+### Get image
+### Get video
+## Manage logs
+## Import/Export cookies
+
 authors = (
 	'Gilles "Almtesh" Émilien MOREL',
 	)
 name = 'pyhomesfr'
-version = '0.8-20160511'
+version = '0.8-20160521'
 
 # Settable modes
 MODE_OFF = 0
@@ -39,6 +47,17 @@ def bytes2file (b):
 	r = BytesIO ()
 	r.write (b)
 	r.seek (0)
+	return (r)
+
+def bytes2image (b):
+	'''
+	Gives a Image object from bytes
+	Uses the bytes2file function
+	'''
+	from PIL import Image
+	f = bytes2file (b)
+	r = Image ()
+	r.open (f)
 	return (r)
 
 class HomeSFR ():
