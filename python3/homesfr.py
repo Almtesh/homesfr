@@ -1,21 +1,12 @@
-#!/usr/bin/python3
 '''
 Home by SFR wrapping class
-Plain use of your Home by SFR device from a Python library
+Plain use of your Home by SFR device from a Python 3 library
 
 Warning:
 This is a wrap aroud website, this could stop working without prior notice
-
-Note about version naming:
-The version are formed like <major>.<minor>-<date>
-Since the major 1, the method's names, paramters and their default value will never change inside the same major.
-So, if a program using a major does not work anymore with another version from the same major, it's a bug from the library.
-
-The major 0 is a testing one
 '''
 
 # TODO:
-## Return sensors in a class
 ## Manage cameras
 ### Get image
 ### Get video
@@ -33,11 +24,21 @@ MODE_OFF = 0
 MODE_CUSTOM = 1
 MODE_ON = 2
 
+# Sensors names
+PRESENCE_DETECTOR = 'PIR_DETECTOR'
+MAGNETIC_OPENNING_DETECTOR = 'MAGNETIC'
+SMOKE_DETECTOR = 'SMOKE'
+SIREN = 'SIREN'
+REMOTE_CONTROLER = 'REMOTE'
+KEYPAD_CONTROLER = 'KEYPAD'
+PRESENCE_CAMERA_DETECTOR = 'PIR_CAMERA'
+
 from urllib import request
 from http.cookiejar import CookieJar
 from urllib.parse import urlencode
 from xml.etree import ElementTree as ET
 from urllib.error import HTTPError
+from datetime import datetime, timezone
 
 def bytes2file (b):
 	'''
@@ -253,7 +254,7 @@ class HomeSFR ():
 			if (i.get (self.sensors_label_id) == id):
 				r = build_tree (i)
 				break
-		return (r)
+		return (Sensor (r))
 	
 	def get_all_sensors (self):
 		'''
@@ -263,3 +264,101 @@ class HomeSFR ():
 		for i in self.list_sensors ():
 			r.append (self.get_sensor (i))
 		return (list (r))
+
+class Sensor:
+	'''
+	Class used to read easily the sensors
+	'''
+	def __init__ (self, sensor_dict):
+		'''
+		Initialize the class with the dict producted by HomeSFR.get_sensors ()
+		'''
+		
+		self.sensor_dict = sensor_dict
+		
+		# Field names
+		self.type_field = 'deviceType'
+		self.model_field = 'deviceModel'
+		self.version_field = 'deviceVersion'
+		self.name_field = 'name'
+		self.longname_field = 'long_name'
+		self.namegender_field = 'name_gender' # Only usefull for French for the moment
+		self.batterylevel_field = 'batteryLevel'
+		self.signal_field = 'signalLevel'
+		self.lasttrigger_field = 'lastTriggerTime'
+		self.lasttrigger_dateformat = '%Y-%m-%d %H:%M:%S'
+		self.status_field = 'status'
+		self.status_value_ok = 'OK'
+		# I don't have any other value for the moment
+	
+	def get_raw (self):
+		'''
+		Returns the raw dict, as presented in the original XML file
+		'''
+		return (self.sensor_dict)
+	
+	def get_type (self):
+		'''
+		Returns the sensor's type
+		'''
+		return (self.sensor_dict [self.type_field])
+	
+	def get_model (self):
+		'''
+		Returns the sensor's model, if any, None either
+		'''
+		return (self.sensor_dict [self.model_field])
+	
+	def get_version (self):
+		'''
+		Returns the sensor's version
+		'''
+		return (self.sensor_dict [self.version_field])
+	
+	def get_name (self):
+		'''
+		Returns the sensor's name
+		'''
+		return (self.sensor_dict [self.name_field])
+	
+	def get_longname (self):
+		'''
+		Returns the sensor's type name in system's language and the sensor's name
+		'''
+		return (self.sensor_dict [self.longname_field])
+	
+	def get_namegender (self):
+		'''
+		Return M for male and F for female.
+		Only usefull for languages with gender on nouns
+		'''
+		return (self.sensor_dict [self.namegender_field])
+	
+	def get_batterylevel (self):
+		'''
+		Returns the sensor's battery level, out of 10
+		It seems that batteryless sensors return 255
+		'''
+		return (int (self.sensor_dict [self.batterylevel_field]))
+	
+	def get_signal (self):
+		'''
+		Returns the sensor's signal quality, out of 10
+		'''
+		return (int (self.sensor_dict [self.signal_field]))
+	
+	def get_lasttrigger (self):
+		'''
+		Return the timestamp of the sensor's last triger
+		The sensors always trigger, even when the alarm's mode is off
+		'''
+		a = self.sensor_dict [self.lasttrigger_field]
+		b = datetime.strptime (a, self.lasttrigger_dateformat)
+		r = int (b.timestamp ())
+		return (r)
+	
+	def get_status (self):
+		'''
+		Returns True is the sensor is OK, False either
+		'''
+		return (self.sensor_dict [self.status_field] == self.status_value_ok)
