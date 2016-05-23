@@ -16,7 +16,7 @@ This is a wrap aroud website, this could stop working without prior notice
 authors = (
 	'Gilles "Almtesh" Émilien MOREL',
 	)
-name = 'pyhomesfr'
+name = 'homesfr for Python 3'
 version = '0.9-20160523'
 
 # Settable modes
@@ -38,7 +38,7 @@ from http.cookiejar import CookieJar
 from urllib.parse import urlencode
 from xml.etree import ElementTree as ET
 from urllib.error import HTTPError
-from datetime import datetime, timezone
+from datetime import datetime
 
 def bytes2file (b):
 	'''
@@ -380,7 +380,11 @@ class Sensor:
 		The sensors always trigger, even when the alarm's mode is off
 		'''
 		a = self.sensor_dict [self.lasttrigger_field]
-		b = datetime.strptime (a, self.lasttrigger_dateformat)
+		# Try because camera return the date '0000-00-00 00:00:00' that is ununderstandable
+		try:
+			b = datetime.strptime (a, self.lasttrigger_dateformat)
+		except ValueError:
+			return (0)
 		r = int (b.timestamp ())
 		return (r)
 	
