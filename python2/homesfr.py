@@ -12,14 +12,13 @@ This is a wrap aroud website, this could stop working without prior notice
 ### Get image
 ### Get video
 ## Manage logs
-## Logout method
 ## Encoding error for sensors' names
 
 authors = (
 	'Gilles "Almtesh" Émilien MOREL',
 	)
 name = 'homesfr for Python 2'
-version = '0.9-20160523'
+version = '0.10-20160523'
 
 # Settable modes
 MODE_OFF = 0
@@ -110,6 +109,7 @@ class HomeSFR ():
 		self.auth_user_field = 'email'
 		self.auth_pass_field = 'passwd'
 		self.auth_extra_fields = {'back': 'service', 'token_sso': '', 'error_sso': '', 'SubmitLogin': 'OK'}
+		self.auth_logout_path = '/deconnexion'
 		
 		# Path to sensors and mode
 		self.sensors_list = '/mysensors'
@@ -188,6 +188,27 @@ class HomeSFR ():
 			return (a.geturl () == self.base_url + self.auth_ok)
 		else:
 			return (False)
+	
+	def logout (self):
+		'''
+		Logs out from HomeBySFR service
+		The object should be destroyed just after calling this method
+		'''
+		if self.DEBUG:
+			print ('Sending disconnect')
+		self.opener.open (self.base_url + self.auth_logout_path)
+		if self.DEBUG:
+			print ('Destroying cookies')
+		del self.cookies
+		self.cookies = None
+		return (None)
+	
+	def get_cookies (self):
+		'''
+		Returns the CookieJar as it is now, for further use
+		It's strongly recommended to use this method only before a object delete
+		'''
+		return (self.cookies)
 	
 	def set_mode (self, mode):
 		'''
@@ -286,13 +307,6 @@ class HomeSFR ():
 		for i in self.list_sensors ():
 			r.append (self.get_sensor (i))
 		return (tuple (r))
-	
-	def get_cookies (self):
-		'''
-		Returns the CookieJar as it is now, for further use
-		It's strongly recommended to use this method only before a object delete
-		'''
-		return (self.cookies)
 
 class Sensor:
 	'''
