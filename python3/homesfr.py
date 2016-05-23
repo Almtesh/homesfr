@@ -229,7 +229,7 @@ class HomeSFR ():
 	
 	def get_sensor (self, id):
 		'''
-		Returns a dict of all variables for the sensor id or None if sensor is not found
+		Returns a Sensor object for the sensor id or None if sensor is not found
 		The available ids can be got from the list_sensors method
 		'''
 		def build_tree (element):
@@ -258,12 +258,12 @@ class HomeSFR ():
 	
 	def get_all_sensors (self):
 		'''
-		Returns a tuple of dicts as described in the get_sensor method
+		Returns a tuple of sensors as described in the get_sensor method
 		'''
 		r = []
 		for i in self.list_sensors ():
 			r.append (self.get_sensor (i))
-		return (list (r))
+		return (tuple (r))
 
 class Sensor:
 	'''
