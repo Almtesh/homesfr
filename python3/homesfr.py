@@ -11,13 +11,13 @@ This is a wrap aroud website, this could stop working without prior notice
 ### Get image
 ### Get video
 ## Manage logs
-## Import/Export cookies
+## Logout method
 
 authors = (
 	'Gilles "Almtesh" Émilien MOREL',
 	)
 name = 'pyhomesfr'
-version = '0.8-20160521'
+version = '0.9-20160523'
 
 # Settable modes
 MODE_OFF = 0
@@ -62,11 +62,13 @@ def bytes2image (b):
 	return (r)
 
 class HomeSFR ():
-	def __init__ (self, username, password, debug = False, autologin = True):
+	def __init__ (self, username = None, password = None, cookies = None, debug = False, autologin = True):
 		'''
-		Sets the class with username and password
+		Sets the class with username and password couple, or cookies
+		Both user/password and cookies can be set, the cookies will be used first
 		The debug parameter defines if the class will write debug messages to stdout, if False, the stdout will never be writen by the class
 		The autologin parameter defines if the class will manage the login by itself, if False, the user must call login () to login and test_login () to check the login
+		The autologin paramater will always be False if no username and password are defined, and the login () method will always return False
 		'''
 		self.DEBUG = debug
 		if self.DEBUG:
@@ -74,14 +76,25 @@ class HomeSFR ():
 			print ('Authors:')
 			for i in authors:
 				print (' - ' + i)
-			print ('init with username ' + username)
+			if username != None:
+				print ('init with username ' + username)
+			if cookies != None:
+				print ('init with cookies')
 			print ('debug = ' + str (debug))
 			print ('autologin = ' + str (autologin))
 		
+		if (username == None or password == None) and cookies == None:
+			raise TypeError ('You must define either username AND password or cookies')
 		self.username = username
 		self.password = password
-		self.autologin = autologin
-		self.cookies = CookieJar ()
+		if self.username != None and self.password != None:
+			self.autologin = autologin
+		else:
+			self.autologin = False
+		if cookies == None:
+			self.cookies = CookieJar ()
+		else:
+			self.cookies = cookies
 		self.opener = request.build_opener (request.HTTPCookieProcessor (self.cookies))
 		
 		# Specific configuration
@@ -129,7 +142,10 @@ class HomeSFR ():
 		'''
 		Shows name, version, defined user and debug state
 		'''
-		return (name + ' ' + version + '\nUser: ' + self.username + '\nDebug: ' + str (self.DEBUG))
+		if self.username != None:
+			return (name + ' ' + version + '\nUser: ' + self.username + '\nDebug: ' + str (self.DEBUG))
+		else:
+			return (name + ' ' + version + '\nUser: Unknown (auth from cookie class)\nDebug: ' + str (self.DEBUG))
 	
 	def test_login (self):
 		'''
@@ -152,20 +168,24 @@ class HomeSFR ():
 		'''
 		Logs in the HomeBySFR service
 		Call this function first or exception will be raised
-		Return True if the login was a success, False either
+		Returns True if the login was a success, False either
+		This method will always return False if no username and password are defined
 		'''
-		self.opener.open (self.auth_referer)
-		data = self.auth_extra_fields
-		data [self.auth_user_field] = self.username
-		data [self.auth_pass_field] = self.password
-		data = bytes (urlencode (data), 'UTF8')
-		if self.DEBUG:
-			print ('Cookies ' + str( len(self.cookies)))
-			print ('Sending data ' + str (data))
-		a = self.opener.open (self.auth_post_url, data = data)
-		if self.DEBUG:
-			print ('Auth redirected to ' + a.geturl ())
-		return (a.geturl () == self.base_url + self.auth_ok)
+		if self.username != None and self.password != None:
+			self.opener.open (self.auth_referer)
+			data = self.auth_extra_fields
+			data [self.auth_user_field] = self.username
+			data [self.auth_pass_field] = self.password
+			data = bytes (urlencode (data), 'UTF8')
+			if self.DEBUG:
+				print ('Cookies ' + str( len(self.cookies)))
+				print ('Sending data ' + str (data))
+			a = self.opener.open (self.auth_post_url, data = data)
+			if self.DEBUG:
+				print ('Auth redirected to ' + a.geturl ())
+			return (a.geturl () == self.base_url + self.auth_ok)
+		else:
+			return (False)
 	
 	def set_mode (self, mode):
 		'''
@@ -264,6 +284,13 @@ class HomeSFR ():
 		for i in self.list_sensors ():
 			r.append (self.get_sensor (i))
 		return (tuple (r))
+	
+	def get_cookies (self):
+		'''
+		Returns the CookieJar as it is now, for further use
+		It's strongly recommended to use this method only before a object delete
+		'''
+		return (self.cookies)
 
 class Sensor:
 	'''
