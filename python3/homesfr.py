@@ -7,9 +7,7 @@ This is a wrap aroud website, this could stop working without prior notice
 '''
 
 # TODO:
-## Put common ressources in the Common class
 ## Manage cameras
-### Get image
 ### Get video
 ## Manage logs
 
