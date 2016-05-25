@@ -11,7 +11,6 @@ This is a wrap aroud website, this could stop working without prior notice
 ## Manage cameras
 ### Get video
 ## Manage logs
-## Encoding error for sensors' names
 
 authors = (
 	'Gilles "Almtesh" Émilien MOREL',
