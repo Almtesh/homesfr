@@ -9,7 +9,6 @@ This is a wrap aroud website, this could stop working without prior notice
 
 # TODO:
 ## Manage cameras
-### Get image
 ### Get video
 ## Manage logs
 ## Encoding error for sensors' names
