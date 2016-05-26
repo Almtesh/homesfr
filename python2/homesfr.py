@@ -10,13 +10,12 @@ This is a wrap aroud website, this could stop working without prior notice
 # TODO:
 ## Manage cameras
 ### Get video
-## Manage logs
 
 authors = (
 	'Gilles "Almtesh" Émilien MOREL',
 	)
 name = 'homesfr for Python 2'
-version = '0.12-20160525'
+version = '0.13-20160526'
 
 # Settable modes
 MODE_OFF = 0
