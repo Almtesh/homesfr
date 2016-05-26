@@ -131,6 +131,10 @@ class Common ():
 		self.sensors_status_field = 'status'
 		self.sensors_status_value_ok = 'OK'
 		# I don't have any other value for the moment
+		
+		# Logs
+		self.logs_path = '/getlog?page=1&nbparpage=10000' # should retrieve all available logs
+		self.logs_labels = 'LOG'
 
 	def bytes2file (self, b):
 		'''
@@ -151,6 +155,29 @@ class Common ():
 		f = self.bytes2file (b)
 		r = Image.open (f)
 		return (r)
+	
+	def get_xml_elements (self,url, label, id_label=None):
+		def build_tree (element):
+			r = {}
+			for i in element.getchildren ():
+				if i.getchildren () == []:
+					r.update ({i.tag: i.text})
+				else:
+					r.update ({i.tag: build_tree (i)})
+			return (r)
+		a = self.bytes2file (self.opener.open (url).read ())
+		a.seek (0)
+		b = ET.parse (a)
+		if id_label == None:
+			r = []
+			for i in b.findall (label):
+				r.append (build_tree (i))
+			return (tuple (r))
+		else:
+			r = {}
+			for i in b.findall (label):
+				r.update ({i.get (id_label): build_tree (i)})
+			return (r)
 
 class HomeSFR (Common):
 	def __init__ (self, username = None, password = None, cookies = None, debug = False, autologin = True):
@@ -238,6 +265,13 @@ class HomeSFR (Common):
 		else:
 			return (False)
 	
+	def do_autologin (self):
+		'''
+		Trigger the autologin
+		'''
+		if (self.autologin and self.test_login () == False):
+			self.login ()
+	
 	def logout (self):
 		'''
 		Logs out from HomeBySFR service
@@ -264,8 +298,7 @@ class HomeSFR (Common):
 		Sets the detection mode
 		For the current version, use the MODE_OFF, MODE_ON and MODE_CUSTOM constants and always returns True, but raises an exception if a problem happens
 		'''
-		if (self.autologin and self.test_login () == False):
-			self.login ()
+		self.do_autologin ()
 		if mode == MODE_OFF:
 			m = self.mode_off
 		elif mode == MODE_CUSTOM:
@@ -287,8 +320,7 @@ class HomeSFR (Common):
 		Gets the detection mode
 		Returns one of MODE_OFF, MODE_ON and MODE_CUSTOM constants, or None if something went wrong
 		'''
-		if (self.autologin and self.test_login () == False):
-			self.login ()
+		self.do_autologin ()
 		r = self.base_url + self.mode_get_path
 		if self.DEBUG:
 			print ('Getting ' + r)
@@ -309,8 +341,7 @@ class HomeSFR (Common):
 		'''
 		Returns a list of sensors' ids.
 		'''
-		if (self.autologin and self.test_login () == False):
-			self.login ()
+		self.do_autologin ()
 		r = self.base_url + self.sensors_list
 		a = self.bytes2file (self.opener.open (r).read ())
 		b = ET.parse (a)
@@ -324,8 +355,7 @@ class HomeSFR (Common):
 		Returns a Sensor object for the sensor id or None if sensor is not found
 		The available ids can be got from the list_sensors method
 		'''
-		if (self.autologin and self.test_login () == False):
-			self.login ()
+		self.do_autologin ()
 		r = Sensor (id, self.opener)
 		r.refresh ()
 		return (r)
@@ -343,11 +373,20 @@ class HomeSFR (Common):
 		'''
 		Get a Camera object from the sensor's id
 		'''
+		self.do_autologin ()
 		if (self.autologin and self.test_login () == False):
 			self.login ()
 		r = Camera (id, self.opener)
 		r.refresh ()
 		return (r)
+	
+	def get_logs (self):
+		'''
+		Return the whole logs in a form of tuple of dicts, as returned byt the site
+		'''
+		self.do_autologin ()
+		a = self.base_url + self.logs_path
+		return (self.get_xml_elements (a, self.logs_labels))
 
 class Sensor (Common):
 	'''
@@ -367,23 +406,10 @@ class Sensor (Common):
 		'''
 		Gets or refresh the data for the sensor
 		'''
-		def build_tree (element):
-			r = {}
-			for i in element.getchildren ():
-				if i.getchildren () == []:
-					r.update ({i.tag: i.text})
-				else:
-					r.update ({i.tag: build_tree (i)})
-			return (r)
+		
 		r = self.base_url + self.sensors_list
-		a = self.bytes2file (self.opener.open (r).read ())
-		a.seek (0)
-		b = ET.parse (a)
 		self.sensor_dict = None
-		for i in b.findall (self.sensors_label):
-			if (i.get (self.sensors_label_id) == self.id):
-				self.sensor_dict = build_tree (i)
-				break
+		self.sensor_dict = self.get_xml_elements (r, self.sensors_label, self.sensors_label_id) [self.id]
 	
 	def get_raw (self):
 		'''
