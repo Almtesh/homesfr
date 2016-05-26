@@ -9,8 +9,6 @@ This is a wrap aroud website, this could stop working without prior notice
 # TODO:
 ## Manage cameras
 ### Get video
-## Manage logs
-## Generalize the Sensor.refresh () method in the Common class
 
 authors = (
 	'Gilles "Almtesh" Émilien MOREL',
