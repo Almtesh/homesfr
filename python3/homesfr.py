@@ -207,8 +207,10 @@ class HomeSFR (Common):
 			self.autologin = False
 		if cookies == None:
 			self.cookies = CookieJar ()
-		else:
+		elif type (cookies) == CookieJar:
 			self.cookies = cookies
+		else:
+			raise TypeError ('Cookies must be CookieJar type.')
 		self.opener = request.build_opener (request.HTTPCookieProcessor (self.cookies))
 	
 	def __str__ (self):
