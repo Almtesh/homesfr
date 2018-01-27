@@ -1,7 +1,6 @@
-# -*- coding: utf8 -*-
 '''
 Home by SFR wrapping class
-Plain use of your Home by SFR device from a Python 2 library
+Plain use of your Home by SFR device from a Python 3 library
 
 Warning:
 This is a wrap aroud website, this could stop working without prior notice
@@ -14,7 +13,7 @@ This is a wrap aroud website, this could stop working without prior notice
 authors = (
 	'Gilles "Almtesh" Émilien MOREL',
 	)
-name = 'homesfr for Python 2'
+name = 'homesfr for Python 3'
 version = '0.13-20160526'
 
 # Settable modes
@@ -31,24 +30,12 @@ REMOTE_CONTROLER = 'REMOTE'
 KEYPAD_CONTROLER = 'KEYPAD'
 PRESENCE_CAMERA_DETECTOR = 'PIR_CAMERA'
 
-# This part of code must be the one to adapt to make work the underneath part
-from cookielib import CookieJar
-import urllib2 as request
-from urllib2 import HTTPError
-from urllib import urlencode
+from urllib import request
+from http.cookiejar import CookieJar
+from urllib.parse import urlencode
 from xml.etree import ElementTree as ET
+from urllib.error import HTTPError
 from datetime import datetime
-
-# Python2 and 3 adaptations
-# BEGIN
-def str2bytes (s):
-	'''
-	Bind to the bytes build-in function
-	'''
-	return (bytes (s))
-# END
-
-# The next must stay a copy from the python3 library, starting from class Common
 
 class Common ():
 	'''
@@ -255,7 +242,7 @@ class HomeSFR (Common):
 			data = self.auth_extra_fields
 			data [self.auth_user_field] = self.username
 			data [self.auth_pass_field] = self.password
-			data = str2bytes (urlencode (data))
+			data = bytes (urlencode (data), 'UTF8')
 			if self.DEBUG:
 				print ('Cookies ' + str( len(self.cookies)))
 				print ('Sending data ' + str (data))
@@ -383,7 +370,7 @@ class HomeSFR (Common):
 	
 	def get_logs (self):
 		'''
-		Return the whole logs in a form of tuple of dicts, as returned byt the site
+		Return the whole logs in a form of tuple of dicts, as returned by the site
 		'''
 		self.do_autologin ()
 		a = self.base_url + self.logs_path
