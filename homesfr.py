@@ -14,7 +14,7 @@ authors = (
 	'Gilles "Almtesh" Émilien MOREL',
 	)
 name = 'homesfr for Python 3'
-version = '0.13-20160526'
+version = '1.0'
 
 # Settable modes
 MODE_OFF = 0
