@@ -10,9 +10,16 @@ This is a wrap aroud website, this could stop working without prior notice
 ## Manage cameras
 ### Get video
 
+from urllib import request
+from http.cookiejar import CookieJar
+from urllib.parse import urlencode
+from xml.etree import ElementTree as ET
+from urllib.error import HTTPError
+from datetime import datetime
+
 authors = (
 	'Gilles "Almtesh" Émilien MOREL',
-	)
+)
 name = 'homesfr for Python 3'
 version = '1.0'
 
@@ -30,13 +37,6 @@ REMOTE_CONTROLER = 'REMOTE'
 KEYPAD_CONTROLER = 'KEYPAD'
 PRESENCE_CAMERA_DETECTOR = 'PIR_CAMERA'
 
-from urllib import request
-from http.cookiejar import CookieJar
-from urllib.parse import urlencode
-from xml.etree import ElementTree as ET
-from urllib.error import HTTPError
-from datetime import datetime
-
 class Common ():
 	'''
 	Common ressources to the library's classes
@@ -50,7 +50,7 @@ class Common ():
 		
 		# path to login test
 		self.auth_path = '/mysensors'
-		self.auth_ok = '/accueil'	# if logged
+		self.auth_ok = '/accueil'					# if logged
 		self.auth_post_url = 'https://boutique.home.sfr.fr/authentification'
 		self.auth_referer = 'https://boutique.home.sfr.fr/authentification?back=service'
 		self.auth_user_field = 'email'
@@ -68,10 +68,10 @@ class Common ():
 		self.mode_get_path = '/mysensors'
 		self.mode_get_label = 'alarm_mode'
 		self.mode_set_path = '/alarmmode'
-		self.mode_set_field = 'action'	# Name for GET field
-		self.mode_off = 'OFF'		# Value for off
-		self.mode_custom = 'CUSTOM'	# Value for custom
-		self.mode_on = 'ON'		# Value for on
+		self.mode_set_field = 'action'					# Name for GET field
+		self.mode_off = 'OFF'						# Value for off
+		self.mode_custom = 'CUSTOM'					# Value for custom
+		self.mode_on = 'ON'						# Value for on
 		
 		# Cameras
 		self.cameras_list = '/homescope/mycams'
@@ -87,15 +87,15 @@ class Common ():
 		self.camera_get_config_path = '/homescope/camsettings'
 		self.camera_get_config_mac = 'mac'
 		self.camera_get_config_flip = 'FLIP'
-		self.camera_get_config_leds = 'LEDMODE' # set to 0 to turn the leds on
-		self.camera_get_config_detectionsensibility = 'DP' # from 1 to 4
+		self.camera_get_config_leds = 'LEDMODE'				# set to 0 to turn the leds on
+		self.camera_get_config_detectionsensibility = 'DP'		# from 1 to 4
 		self.camera_get_config_recording = 'REC24'
 		self.camera_get_config_name = 'NAME'
 		self.camera_set_config_path = '/homescope/camsettings'
 		self.camera_set_config_mac = 'mac'
 		self.camera_set_config_flip = 'flip'
-		self.camera_set_config_leds = 'led_mode' # set to 0 to turn the leds on
-		self.camera_set_config_detectionsensibility = 'dp' # from 1 to 4
+		self.camera_set_config_leds = 'led_mode'			# set to 0 to turn the leds on
+		self.camera_set_config_detectionsensibility = 'dp'		# from 1 to 4
 		self.camera_set_config_recording = 'rec24'
 		self.camera_set_config_name = 'name'
 		
@@ -109,7 +109,7 @@ class Common ():
 		self.sensors_version_field = 'deviceVersion'
 		self.sensors_name_field = 'name'
 		self.sensors_longname_field = 'long_name'
-		self.sensors_namegender_field = 'name_gender' # Only usefull for French for the moment
+		self.sensors_namegender_field = 'name_gender'			# Only usefull for French for the moment
 		self.sensors_batterylevel_field = 'batteryLevel'
 		self.sensors_signal_field = 'signalLevel'
 		self.sensors_lasttrigger_field = 'lastTriggerTime'
@@ -119,7 +119,7 @@ class Common ():
 		# I don't have any other value for the moment
 		
 		# Logs
-		self.logs_path = '/getlog?page=1&nbparpage=10000' # should retrieve all available logs
+		self.logs_path = '/getlog?page=1&nbparpage=10000'		# should retrieve all available logs
 		self.logs_labels = 'LOG'
 
 	def bytes2file (self, b):
@@ -142,7 +142,7 @@ class Common ():
 		r = Image.open (f)
 		return (r)
 	
-	def get_xml_elements (self,url, label, id_label=None):
+	def get_xml_elements (self, url, label, id_label=None):
 		def build_tree (element):
 			r = {}
 			for i in element.getchildren ():
@@ -154,7 +154,7 @@ class Common ():
 		a = self.bytes2file (self.opener.open (url).read ())
 		a.seek (0)
 		b = ET.parse (a)
-		if id_label == None:
+		if id_label is None:
 			r = []
 			for i in b.findall (label):
 				r.append (build_tree (i))
@@ -181,22 +181,22 @@ class HomeSFR (Common):
 			print ('Authors:')
 			for i in authors:
 				print (' - ' + i)
-			if username != None:
+			if username is not None:
 				print ('init with username ' + username)
-			if cookies != None:
+			if cookies is not None:
 				print ('init with cookies')
 			print ('debug = ' + str (debug))
 			print ('autologin = ' + str (autologin))
 		
-		if (username == None or password == None) and cookies == None:
+		if (username is None or password is None) and cookies is None:
 			raise TypeError ('You must define either username AND password or cookies')
 		self.username = username
 		self.password = password
-		if self.username != None and self.password != None:
+		if self.username is not None and self.password is not None:
 			self.autologin = autologin
 		else:
 			self.autologin = False
-		if cookies == None:
+		if cookies is None:
 			self.cookies = CookieJar ()
 		elif type (cookies) == CookieJar:
 			self.cookies = cookies
@@ -208,7 +208,7 @@ class HomeSFR (Common):
 		'''
 		Shows name, version, defined user and debug state
 		'''
-		if self.username != None:
+		if self.username is not None:
 			return (name + ' ' + version + '\nUser: ' + self.username + '\nDebug: ' + str (self.DEBUG))
 		else:
 			return (name + ' ' + version + '\nUser: Unknown (auth from cookie class)\nDebug: ' + str (self.DEBUG))
@@ -237,14 +237,14 @@ class HomeSFR (Common):
 		Returns True if the login was a success, False either
 		This method will always return False if no username and password are defined
 		'''
-		if self.username != None and self.password != None:
+		if self.username is not None and self.password is not None:
 			self.opener.open (self.auth_referer)
 			data = self.auth_extra_fields
 			data [self.auth_user_field] = self.username
 			data [self.auth_pass_field] = self.password
 			data = bytes (urlencode (data), 'UTF8')
 			if self.DEBUG:
-				print ('Cookies ' + str( len(self.cookies)))
+				print ('Cookies ' + str (len (self.cookies)))
 				print ('Sending data ' + str (data))
 			a = self.opener.open (self.auth_post_url, data = data)
 			if self.DEBUG:
@@ -257,7 +257,7 @@ class HomeSFR (Common):
 		'''
 		Trigger the autologin
 		'''
-		if (self.autologin and self.test_login () == False):
+		if (self.autologin and not self.test_login ()):
 			self.login ()
 	
 	def logout (self):
@@ -362,7 +362,7 @@ class HomeSFR (Common):
 		Get a Camera object from the sensor's id
 		'''
 		self.do_autologin ()
-		if (self.autologin and self.test_login () == False):
+		if (self.autologin and not self.test_login ()):
 			self.login ()
 		r = Camera (id, self.opener)
 		r.refresh ()
