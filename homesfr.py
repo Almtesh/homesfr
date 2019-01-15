@@ -37,6 +37,7 @@ REMOTE_CONTROLER = 'REMOTE'
 KEYPAD_CONTROLER = 'KEYPAD'
 PRESENCE_CAMERA_DETECTOR = 'PIR_CAMERA'
 
+
 class Common ():
 	'''
 	Common ressources to the library's classes
@@ -142,7 +143,7 @@ class Common ():
 		r = Image.open (f)
 		return (r)
 	
-	def get_xml_elements (self, url, label, id_label=None):
+	def get_xml_elements (self, url, label, id_label = None):
 		def build_tree (element):
 			r = {}
 			for i in element.getchildren ():
@@ -164,6 +165,7 @@ class Common ():
 			for i in b.findall (label):
 				r.update ({i.get (id_label): build_tree (i)})
 			return (r)
+
 
 class HomeSFR (Common):
 	def __init__ (self, username = None, password = None, cookies = None, debug = False, autologin = True):
@@ -376,6 +378,7 @@ class HomeSFR (Common):
 		a = self.base_url + self.logs_path
 		return (self.get_xml_elements (a, self.logs_labels))
 
+
 class Sensor (Common):
 	'''
 	Class used to read easily the sensors
@@ -480,6 +483,7 @@ class Sensor (Common):
 		Returns True is the sensor is OK, False either
 		'''
 		return (self.sensor_dict [self.sensors_status_field] == self.sensors_status_value_ok)
+
 
 class Camera (Sensor):
 	'''
