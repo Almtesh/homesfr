@@ -52,11 +52,11 @@ class Common ():
 		# path to login test
 		self.auth_path = '/mysensors'
 		self.auth_ok = '/accueil'					# if logged
-		self.auth_post_url = 'https://boutique.home.sfr.fr/authentification'
-		self.auth_referer = 'https://boutique.home.sfr.fr/authentification?back=service'
-		self.auth_user_field = 'email'
-		self.auth_pass_field = 'passwd'
-		self.auth_extra_fields = {'back': 'service', 'token_sso': '', 'error_sso': '', 'SubmitLogin': 'OK'}
+		self.auth_post_url = 'https://cas.home.sfr.fr/authentification'
+		self.auth_referer = 'https://cas.home.sfr.fr/authentification'
+		self.auth_user_field = 'username'
+		self.auth_pass_field = 'password'
+		self.auth_extra_fields = {}
 		self.auth_logout_path = '/deconnexion'
 		
 		# Path to sensors and mode
