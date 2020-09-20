@@ -21,7 +21,7 @@ authors = (
 	'Gilles "Almtesh" Émilien MOREL',
 )
 name = 'homesfr for Python 3'
-version = '1.1'
+version = '1.2'
 
 # Settable modes
 MODE_OFF = 0
@@ -51,12 +51,12 @@ class Common ():
 		
 		# path to login test
 		self.auth_path = '/mysensors'
-		self.auth_ok = '/accueil'					# if logged
-		self.auth_post_url = 'https://cas.home.sfr.fr/authentification'
-		self.auth_referer = 'https://cas.home.sfr.fr/authentification'
-		self.auth_user_field = 'username'
-		self.auth_pass_field = 'password'
-		self.auth_extra_fields = {}
+		self.auth_ok_url = 'https://home.sfr.fr/logged'	# if logged
+		self.auth_post_url = 'https://boutique.home.sfr.fr/authentification'
+		self.auth_referer = 'https://boutique.home.sfr.fr/authentification?back=service'
+		self.auth_user_field = 'email'
+		self.auth_pass_field = 'passwd'
+		self.auth_extra_fields = {'back': 'service', 'token_sso': '', 'error_sso': '', 'SubmitLogin': 'OK'}
 		self.auth_logout_path = '/deconnexion'
 		
 		# Path to sensors and mode
@@ -251,7 +251,7 @@ class HomeSFR (Common):
 			a = self.opener.open (self.auth_post_url, data = data)
 			if self.DEBUG:
 				print ('Auth redirected to ' + a.geturl ())
-			return (a.geturl () == self.base_url + self.auth_ok)
+			return (a.geturl () == self.auth_ok_url)
 		else:
 			return (False)
 	
@@ -259,7 +259,7 @@ class HomeSFR (Common):
 		'''
 		Trigger the autologin
 		'''
-		if (self.autologin and not self.test_login ()):
+		while (self.autologin and not self.test_login ()):
 			self.login ()
 	
 	def logout (self):
@@ -364,8 +364,6 @@ class HomeSFR (Common):
 		Get a Camera object from the sensor's id
 		'''
 		self.do_autologin ()
-		if (self.autologin and not self.test_login ()):
-			self.login ()
 		r = Camera (id, self.opener)
 		r.refresh ()
 		return (r)
