@@ -89,14 +89,15 @@ class Common ():
 		self.camera_get_config_mac = 'mac'
 		self.camera_get_config_flip = 'FLIP'
 		self.camera_get_config_leds = 'LEDMODE'				# set to 0 to turn the leds on
-		self.camera_get_config_detectionsensibility = 'DP'		# from 1 to 4
-		self.camera_get_config_recording = 'REC24'
+		self.camera_get_config_petmode = 'pet_mode'
+		self.camera_get_config_recording = 'rec24'
+		self.camera_get_config_privacy = 'privacy'
 		self.camera_get_config_name = 'NAME'
 		self.camera_set_config_path = '/homescope/camsettings'
 		self.camera_set_config_mac = 'mac'
 		self.camera_set_config_flip = 'flip'
 		self.camera_set_config_leds = 'led_mode'			# set to 0 to turn the leds on
-		self.camera_set_config_detectionsensibility = 'dp'		# from 1 to 4
+		self.camera_set_config_petmode = 'pet_mode'
 		self.camera_set_config_recording = 'rec24'
 		self.camera_set_config_name = 'name'
 		
@@ -481,19 +482,8 @@ class Sensor (Common):
 		Returns True is the sensor is OK, False either
 		'''
 		return (self.sensor_dict [self.sensors_status_field] == self.sensors_status_value_ok)
-
-
-class Camera (Sensor):
-	'''
-	Class used to manipulate easily cameras
-	'''
-	def __init__ (self, sensor_dict, opener):
-		'''
-		Initialize the class with the dict producted by HomeSFR.get_camera ()
-		'''
-		Sensor.__init__ (self, sensor_dict, opener)
 	
-	def get_snapshot (self):
+	def get_camera_snapshot (self):
 		'''
 		Get a snapshot from the camera
 		Return a PIL.Image object
@@ -501,3 +491,22 @@ class Camera (Sensor):
 		r = self.base_url + self.camera_snapshot + '?' + self.camera_snapshot_mac + '=' + self.get_mac ()
 		a = self.bytes2image (self.opener.open (r).read ())
 		return (a)
+	
+	def get_camera_petmode (self):
+		'''
+		Gets the pet mode value
+		Pet mode is a setting on movement sensibility, to avoid trigger on pet movements
+		'''
+		return (self.sensor_dict [self.camera_get_config_petmode] == '1')
+	
+	def get_camera_recording (self):
+		'''
+		Gets if the camera records or not
+		'''
+		return (self.sensor_dict [self.camera_get_config_recording] == '1')
+	
+	def get_camera_privacy (self):
+		'''
+		Gets if the camera records or not
+		'''
+		return (self.sensor_dict [self.camera_get_config_privacy] == '1')
