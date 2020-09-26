@@ -51,7 +51,7 @@ class Common ():
 		
 		# path to login test
 		self.auth_path = '/mysensors'
-		self.auth_ok_url = 'https://home.sfr.fr/logged'	# if logged
+		self.auth_ok_url = 'https://home.sfr.fr/logged'			# if logged
 		self.auth_post_url = 'https://boutique.home.sfr.fr/authentification'
 		self.auth_referer = 'https://boutique.home.sfr.fr/authentification?back=service'
 		self.auth_user_field = 'email'
