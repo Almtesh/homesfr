@@ -100,6 +100,13 @@ sensors_signal_field = 'signalLevel'
 sensors_status_field = 'status'
 sensors_status_value_ok = 'OK'
 
+# Capteurs de température et humidité
+sensors_temphum_root_field = 'sensorValues'
+sensors_temp_name = 'name'
+sensors_temp_text = 'Temperature'
+sensors_hum_name = 'name'
+sensors_hum_text = 'Humidity'
+
 # Fil d'événements
 logs_path = '/getlog?page=1&nbparpage=10000'		# je pense qu'on récupère tous les événements avec cette valeur
 logs_labels = 'LOG'
@@ -363,7 +370,7 @@ class Sensor ():
 		for i in lst:
 			if i [0] == key:
 				return (i [2])
-		raise KeyError ()
+		raise KeyError ('no value ' + key)
 	
 	def get_mac (self):
 		'''
@@ -439,19 +446,37 @@ class Sensor ():
 	
 	def get_camera_petmode (self):
 		'''
-		Gets the pet mode value
-		Pet mode is a setting on movement sensibility, to avoid trigger on pet movements
+		Retourne l'état du mode animaux domestiques
+		Ce mode réduit la sensibilité du capteur pour éviter des déclanchements d'alarme dus aux animaux
 		'''
 		return (self.sensor_dict [camera_get_config_petmode] == '1')
 	
 	def get_camera_recording (self):
 		'''
-		Gets if the camera records or not
+		Retourne l'état de l'enregistrement vidéo 24/24
 		'''
 		return (self.sensor_dict [camera_get_config_recording] == '1')
 	
 	def get_camera_privacy (self):
 		'''
-		Gets if the camera records or not
+		Si cette méthode retourne True, la caméra est paramétrée pour ne pas capture d'image
 		'''
 		return (self.sensor_dict [camera_get_config_privacy] == '1')
+	
+	def get_temperature (self):
+		'''
+		Retourne la température donnée par le capteur
+		'''
+		a = self.get_value (self.sensor_dict, sensors_temphum_root_field)
+		for i in a:
+			if i [1] [sensors_temp_name] == sensors_temp_text:
+				return (float (i [2].replace ('°C', '')))
+	
+	def get_humidity (self):
+		'''
+		Retourne l'humidité donnée par le capteur
+		'''
+		a = self.get_value (self.sensor_dict, sensors_temphum_root_field)
+		for i in a:
+			if i [1] [sensors_hum_name] == sensors_hum_text:
+				return (int (i [2].replace ('%', '')))
