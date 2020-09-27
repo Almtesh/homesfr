@@ -1,198 +1,171 @@
-'''
-Home by SFR wrapping class
-Plain use of your Home by SFR device from a Python 3 library
-
-Warning:
-This is a wrap aroud website, this could stop working without prior notice
-'''
+# WARNING: ce code s'appuie sur une API découverte par rétro-ingénérie.
+# Il peut cesser de fonctionner sans préavis.
 
 # TODO:
-## Manage cameras
-### Get video
+##
 
 from urllib import request
 from http.cookiejar import CookieJar
 from urllib.parse import urlencode
-from xml.etree import ElementTree as ET
 from urllib.error import HTTPError
-from datetime import datetime
 
 authors = (
 	'Gilles "Almtesh" Émilien MOREL',
 )
-name = 'homesfr for Python 3'
-version = '1.2'
+name = 'homesfr pour Python 3'
+version = '1.3'
 
-# Settable modes
+# Modes utilisables
 MODE_OFF = 0
 MODE_CUSTOM = 1
 MODE_ON = 2
 
-# Sensors names
-PRESENCE_DETECTOR = 'PIR_DETECTOR'
-MAGNETIC_OPENNING_DETECTOR = 'MAGNETIC'
-SMOKE_DETECTOR = 'SMOKE'
-SIREN = 'SIREN'
-REMOTE_CONTROLER = 'REMOTE'
-KEYPAD_CONTROLER = 'KEYPAD'
-PRESENCE_CAMERA_DETECTOR = 'PIR_CAMERA'
+# Types de capteurs
+PRESENCE_DETECTOR = 'PIR_DETECTOR'			# https://boutique.home.sfr.fr/detecteur-de-mouvement
+MAGNETIC_OPENNING_DETECTOR = 'MAGNETIC'			# https://boutique.home.sfr.fr/detecteur-d-ouverture-de-porte-ou-fenetre
+SMOKE_DETECTOR = 'SMOKE'				# https://boutique.home.sfr.fr/detecteur-de-fumee
+SIREN = 'SIREN'						# https://boutique.home.sfr.fr/sirene-interieure (et peut-être https://boutique.home.sfr.fr/sirene-exterieure)
+REMOTE_CONTROLER = 'REMOTE'				# https://boutique.home.sfr.fr/telecommande
+KEYPAD_CONTROLER = 'KEYPAD'				# https://boutique.home.sfr.fr/clavier-de-commande
+PRESENCE_CAMERA_DETECTOR = 'PIR_CAMERA'			# https://boutique.home.sfr.fr/camera
+
+base_url = 'https://home.sfr.fr'
+
+# Authentification
+auth_path = '/mysensors'
+auth_ok_url = 'https://home.sfr.fr/logged'
+auth_post_url = 'https://boutique.home.sfr.fr/authentification'
+auth_referer = 'https://boutique.home.sfr.fr/authentification?back=service'
+auth_user_field = 'email'
+auth_pass_field = 'passwd'
+auth_extra_fields = {'back': 'service', 'token_sso': '', 'error_sso': '', 'SubmitLogin': 'OK'}
+auth_logout_path = '/deconnexion'
+
+# Chemin pour la liste des capteurs
+sensors_list = '/mysensors'
+
+# Chemin pour les alertes
+alerts_path = '/listalert'
+
+# Détection
+mode_get_path = '/mysensors'
+mode_get_label = 'alarm_mode'
+mode_set_path = '/alarmmode'
+mode_set_field = 'action'				# Name for GET field
+mode_off = 'OFF'					# Value for off
+mode_custom = 'CUSTOM'					# Value for custom
+mode_on = 'ON'						# Value for on
+
+# Cémera
+cameras_list = '/homescope/mycams'
+camera_snapshot = '/homescope/snapshot?size=4'
+camera_snapshot_mac = 'mac'
+camera_video = '/homescope/flv'
+camera_video_mac = 'mac'
+camera_recordings_list = '/listenr'
+camera_recordings_delete = '/delenr'
+camera_recordings_start = '/homescope/record'
+camera_recordings_stop = '/homescope/stoprecord'
+camera_recordings_mac = 'mac'
+camera_get_config_path = '/homescope/camsettings'
+camera_get_config_mac = 'mac'
+camera_get_config_flip = 'FLIP'
+camera_get_config_leds = 'LEDMODE'
+camera_get_config_petmode = 'pet_mode'
+camera_get_config_recording = 'rec24'
+camera_get_config_privacy = 'privacy'
+camera_get_config_name = 'NAME'
+camera_set_config_path = '/homescope/camsettings'
+camera_set_config_mac = 'mac'
+camera_set_config_flip = 'flip'
+camera_set_config_leds = 'led_mode'
+camera_set_config_petmode = 'pet_mode'
+camera_set_config_recording = 'rec24'
+# Le paramètre privacy se gère avec le bouton derrière la caméra.
+camera_set_config_name = 'name'
+
+# Capteurs
+sensors_list = '/mysensors'
+sensors_label = 'Sensor'
+sensors_label_id = 'id'
+sensors_mac_field = 'deviceMac'
+sensors_type_field = 'deviceType'
+sensors_model_field = 'deviceModel'
+sensors_version_field = 'deviceVersion'
+sensors_name_field = 'name'
+sensors_longname_field = 'long_name'
+sensors_namegender_field = 'name_gender'
+sensors_batterylevel_field = 'batteryLevel'
+sensors_signal_field = 'signalLevel'
+sensors_status_field = 'status'
+sensors_status_value_ok = 'OK'
+
+# Fil d'événements
+logs_path = '/getlog?page=1&nbparpage=10000'		# je pense qu'on récupère tous les événements avec cette valeur
+logs_labels = 'LOG'
 
 
-class Common ():
+def bytes2file (b):
 	'''
-	Common ressources to the library's classes
+	Retourne une classe semblable à un fichier contant b
 	'''
-	
-	def __init__ (self):
-		
-		# Specific configuration
-		
-		self.base_url = 'https://home.sfr.fr'
-		
-		# path to login test
-		self.auth_path = '/mysensors'
-		self.auth_ok_url = 'https://home.sfr.fr/logged'			# if logged
-		self.auth_post_url = 'https://boutique.home.sfr.fr/authentification'
-		self.auth_referer = 'https://boutique.home.sfr.fr/authentification?back=service'
-		self.auth_user_field = 'email'
-		self.auth_pass_field = 'passwd'
-		self.auth_extra_fields = {'back': 'service', 'token_sso': '', 'error_sso': '', 'SubmitLogin': 'OK'}
-		self.auth_logout_path = '/deconnexion'
-		
-		# Path to sensors and mode
-		self.sensors_list = '/mysensors'
-		
-		# Path to list of alerts
-		self.alerts_path = '/listalert'
-		
-		# Path to get and set modes
-		self.mode_get_path = '/mysensors'
-		self.mode_get_label = 'alarm_mode'
-		self.mode_set_path = '/alarmmode'
-		self.mode_set_field = 'action'					# Name for GET field
-		self.mode_off = 'OFF'						# Value for off
-		self.mode_custom = 'CUSTOM'					# Value for custom
-		self.mode_on = 'ON'						# Value for on
-		
-		# Cameras
-		self.cameras_list = '/homescope/mycams'
-		self.camera_snapshot = '/homescope/snapshot'
-		self.camera_snapshot_mac = 'mac'
-		self.camera_video = '/homescope/flv'
-		self.camera_vide_mac = 'mac'
-		self.camera_recordings_list = '/listenr'
-		self.camera_recordings_delete = '/delenr'
-		self.camera_recordings_start = '/homescope/record'
-		self.camera_recordings_stop = '/homescope/stoprecord'
-		self.camera_recordings_mac = 'mac'
-		self.camera_get_config_path = '/homescope/camsettings'
-		self.camera_get_config_mac = 'mac'
-		self.camera_get_config_flip = 'FLIP'
-		self.camera_get_config_leds = 'LEDMODE'				# set to 0 to turn the leds on
-		self.camera_get_config_petmode = 'pet_mode'
-		self.camera_get_config_recording = 'rec24'
-		self.camera_get_config_privacy = 'privacy'
-		self.camera_get_config_name = 'NAME'
-		self.camera_set_config_path = '/homescope/camsettings'
-		self.camera_set_config_mac = 'mac'
-		self.camera_set_config_flip = 'flip'
-		self.camera_set_config_leds = 'led_mode'			# set to 0 to turn the leds on
-		self.camera_set_config_petmode = 'pet_mode'
-		self.camera_set_config_recording = 'rec24'
-		self.camera_set_config_name = 'name'
-		
-		# Sensors
-		self.sensors_list = '/mysensors'
-		self.sensors_label = 'Sensor'
-		self.sensors_label_id = 'id'
-		self.sensors_mac_field = 'deviceMac'
-		self.sensors_type_field = 'deviceType'
-		self.sensors_model_field = 'deviceModel'
-		self.sensors_version_field = 'deviceVersion'
-		self.sensors_name_field = 'name'
-		self.sensors_longname_field = 'long_name'
-		self.sensors_namegender_field = 'name_gender'			# Only usefull for French for the moment
-		self.sensors_batterylevel_field = 'batteryLevel'
-		self.sensors_signal_field = 'signalLevel'
-		self.sensors_lasttrigger_field = 'lastTriggerTime'
-		self.sensors_lasttrigger_dateformat = '%Y-%m-%d %H:%M:%S'
-		self.sensors_status_field = 'status'
-		self.sensors_status_value_ok = 'OK'
-		# I don't have any other value for the moment
-		
-		# Logs
-		self.logs_path = '/getlog?page=1&nbparpage=10000'		# should retrieve all available logs
-		self.logs_labels = 'LOG'
+	from io import BytesIO
+	r = BytesIO ()
+	r.write (b)
+	r.seek (0)
+	return (r)
 
-	def bytes2file (self, b):
-		'''
-		Gives a file-like class from a Bytes
-		'''
-		from io import BytesIO
-		r = BytesIO ()
-		r.write (b)
-		r.seek (0)
-		return (r)
 
-	def bytes2image (self, b):
-		'''
-		Gives a Image object from bytes
-		Uses the bytes2file function
-		'''
-		from PIL import Image
-		f = self.bytes2file (b)
-		r = Image.open (f)
-		return (r)
-	
-	def get_xml_elements (self, url, label, id_label = None):
-		def build_tree (element):
-			r = {}
-			for i in element.getchildren ():
-				if i.getchildren () == []:
-					r.update ({i.tag: i.text})
-				else:
-					r.update ({i.tag: build_tree (i)})
-			return (r)
-		a = self.bytes2file (self.opener.open (url).read ())
-		a.seek (0)
-		b = ET.parse (a)
-		if id_label is None:
-			r = []
-			for i in b.findall (label):
-				r.append (build_tree (i))
-			return (tuple (r))
+def bytes2image (b):
+	'''
+	Retourne une Image PIL contenant l'image donnée en b
+	'''
+	from PIL import Image
+	f = bytes2file (b)
+	r = Image.open (f)
+	return (r)
+
+
+def get_xml_tree (fp):
+	'''
+	Retourne une variable itérable contenant les données d'un arbre XML
+	'''
+	def build_tree (element):
+		if tuple (element) == ():
+			return (element.tag, dict (element.items ()), element.text)
 		else:
-			r = {}
-			for i in b.findall (label):
-				r.update ({i.get (id_label): build_tree (i)})
-			return (r)
+			sub = []
+			for i in element:
+				sub.append (build_tree (i))
+			return (element.tag, dict (element.items ()), sub)
+	from xml.etree import ElementTree as ET
+	fp.seek (0)
+	root = ET.parse (fp).getroot ()
+	return (build_tree (root))
 
 
-class HomeSFR (Common):
+class HomeSFR ():
 	def __init__ (self, username = None, password = None, cookies = None, debug = False, autologin = True):
 		'''
-		Sets the class with username and password couple, or cookies
-		Both user/password and cookies can be set, the cookies will be used first
-		The debug parameter defines if the class will write debug messages to stdout, if False, the stdout will never be writen by the class
-		The autologin parameter defines if the class will manage the login by itself, if False, the user must call login () to login and test_login () to check the login
-		The autologin paramater will always be False if no username and password are defined, and the login () method will always return False
+		Instancie la classe avec un identifiant et un mot de passe, ou des cookies
+		On peut définir les identifiants et les cookies, la classe utilisera les cookies par défaut et les identifiants si on n'est pas connecté
+		debug fourni des informations supplémentaires sur la sortie standard, s'il est à False, cette classe n'envoie rien sur la sortie standard
 		'''
-		Common.__init__ (self)
 		self.DEBUG = debug
 		if self.DEBUG:
 			print (name + ' ' + version)
-			print ('Authors:')
+			print ('Auteurs:')
 			for i in authors:
 				print (' - ' + i)
 			if username is not None:
-				print ('init with username ' + username)
+				print ('initalisé avec l\'identifiant ' + username)
 			if cookies is not None:
-				print ('init with cookies')
+				print ('initialisé avec des cookies')
 			print ('debug = ' + str (debug))
 			print ('autologin = ' + str (autologin))
 		
 		if (username is None or password is None) and cookies is None:
-			raise TypeError ('You must define either username AND password or cookies')
+			raise TypeError ('Vous devez définir des identifiant ou des cookies !')
 		self.username = username
 		self.password = password
 		if self.username is not None and self.password is not None:
@@ -204,292 +177,264 @@ class HomeSFR (Common):
 		elif type (cookies) == CookieJar:
 			self.cookies = cookies
 		else:
-			raise TypeError ('Cookies must be CookieJar type.')
+			raise TypeError ('Les cookies doivent être de type CookieJar !')
 		self.opener = request.build_opener (request.HTTPCookieProcessor (self.cookies))
 	
 	def __str__ (self):
 		'''
-		Shows name, version, defined user and debug state
+		Returne des informations sur l'état de l'instance
 		'''
 		if self.username is not None:
-			return (name + ' ' + version + '\nUser: ' + self.username + '\nDebug: ' + str (self.DEBUG))
+			return (name + ' ' + version + '\nUtilisateur : ' + self.username + '\nDebug : ' + str (self.DEBUG))
 		else:
-			return (name + ' ' + version + '\nUser: Unknown (auth from cookie class)\nDebug: ' + str (self.DEBUG))
-	
+			return (name + ' ' + version + '\nUtilisateur : Inconnu, authentifié avec des cookies.\nDebug : ' + str (self.DEBUG))
+
 	def test_login (self):
 		'''
-		Tests if the client is logged
-		Return True if it's logged, returns False either
+		Retourne l'état de l'authentification
 		'''
 		try:
 			if self.DEBUG:
-				print ('Testing login')
-			self.opener.open (self.base_url + self.auth_path)
+				print ('Test de l\'authentification')
+			self.opener.open (base_url + auth_path)
 		except HTTPError:
 			if self.DEBUG:
-				print ('Not connected')
+				print ('Non connecté')
 			return (False)
 		if self.DEBUG:
-			print ('Connected')
+			print ('Connecté')
 		return (True)
 	
 	def login (self):
 		'''
-		Logs in the HomeBySFR service
-		Call this function first or exception will be raised
-		Returns True if the login was a success, False either
-		This method will always return False if no username and password are defined
+		S'authentifier auprès du service
+		Retourne True si c'est réussi, False sinon
+		Si seuls les cookies sont définis, la méthode retournera False, même si nous sommes authentifiés, pour savoir si on est authentifiés, utiliser test_login ()
 		'''
 		if self.username is not None and self.password is not None:
-			self.opener.open (self.auth_referer)
-			data = self.auth_extra_fields
-			data [self.auth_user_field] = self.username
-			data [self.auth_pass_field] = self.password
+			self.opener.open (auth_referer)
+			data = auth_extra_fields
+			data [auth_user_field] = self.username
+			data [auth_pass_field] = self.password
 			data = bytes (urlencode (data), 'UTF8')
 			if self.DEBUG:
 				print ('Cookies ' + str (len (self.cookies)))
-				print ('Sending data ' + str (data))
-			a = self.opener.open (self.auth_post_url, data = data)
+				print ('Envoi de ' + str (data))
+			a = self.opener.open (auth_post_url, data = data)
 			if self.DEBUG:
-				print ('Auth redirected to ' + a.geturl ())
-			return (a.geturl () == self.auth_ok_url)
+				print ('Authentification redirigée vers ' + a.geturl ())
+			return (a.geturl () == auth_ok_url)
 		else:
 			return (False)
 	
-	def do_autologin (self):
+	def get_or_autologin (self, url, data = None):
 		'''
-		Trigger the autologin
+		Fais une requête, si une erreur 403 est retourné, tente une authentification automatiquement (si réglé dans le paramètre autologin), sinon lève une exception
 		'''
-		while (self.autologin and not self.test_login ()):
-			self.login ()
+		try:
+			return (self.opener.open (url, data = data))
+		except HTTPError as e:
+			if '403' in str (e) and self.autologin:
+				self.login ()
+				return (self.opener.open (url, data = data))
+			else:
+				raise e
 	
 	def logout (self):
 		'''
-		Logs out from HomeBySFR service
-		The object should be destroyed just after calling this method
+		Se déconnecter
+		L'instance devrait être supprimée après l'appel de cette fonction
 		'''
 		if self.DEBUG:
-			print ('Sending disconnect')
-		self.opener.open (self.base_url + self.auth_logout_path)
+			print ('Demande de déconnexion')
+		self.opener.open (base_url + auth_logout_path)
 		if self.DEBUG:
-			print ('Destroying cookies')
+			print ('Destruction des cookies')
 		del self.cookies
 		self.cookies = None
 		return (None)
 	
 	def get_cookies (self):
 		'''
-		Returns the CookieJar as it is now, for further use
-		It's strongly recommended to use this method only before a object delete
+		Récupérer les cookies
+		Il est recommandé de supprimer l'instance après cette fonction
 		'''
 		return (self.cookies)
 	
 	def set_mode (self, mode):
 		'''
-		Sets the detection mode
-		For the current version, use the MODE_OFF, MODE_ON and MODE_CUSTOM constants and always returns True, but raises an exception if a problem happens
+		Modifie le mode de détection
 		'''
-		self.do_autologin ()
 		if mode == MODE_OFF:
-			m = self.mode_off
+			m = mode_off
 		elif mode == MODE_CUSTOM:
-			m = self.mode_custom
+			m = mode_custom
 		elif mode == MODE_ON:
-			m = self.mode_on
+			m = mode_on
 		else:
 			if self.DEBUG:
-				print ('You should use the MODE_OFF, MODE_ON and MODE_CUSTOM constants to set this.')
+				print ('Vous devriez utiliser les constantes MODE_OFF, MODE_ON et MODE_CUSTOM.')
 			raise ValueError
-		r = self.base_url + self.mode_set_path + '?' + self.mode_set_field + '=' + m
+		r = base_url + mode_set_path + '?' + mode_set_field + '=' + m
 		if self.DEBUG:
-			print ('Will get ' + r)
-		self.opener.open (r)
+			print ('Demande ' + r)
+		self.get_or_autologin (r)
 		return (True)
 	
 	def get_mode (self):
 		'''
-		Gets the detection mode
-		Returns one of MODE_OFF, MODE_ON and MODE_CUSTOM constants, or None if something went wrong
+		Retourne le mode de détection
 		'''
-		self.do_autologin ()
-		r = self.base_url + self.mode_get_path
+		r = base_url + mode_get_path
 		if self.DEBUG:
-			print ('Getting ' + r)
-		a = self.bytes2file (self.opener.open (r).read ())
-		b = ET.parse (a).getroot ()
-		c = b.get (self.mode_get_label)
+			print ('Demande ' + r)
+		a = bytes2file (self.get_or_autologin (r).read ())
+		b = get_xml_tree (a) [1]
+		c = b [mode_get_label]
 		if self.DEBUG:
-			print ('Got mode ' + c)
-		if (c == self.mode_off):
+			print ('Mode de détection ' + c)
+		if (c == mode_off):
 			return (MODE_OFF)
-		if (c == self.mode_custom):
+		if (c == mode_custom):
 			return (MODE_CUSTOM)
-		if (c == self.mode_on):
+		if (c == mode_on):
 			return (MODE_ON)
 		return (None)
 	
 	def list_sensors (self):
 		'''
-		Returns a list of sensors' ids.
+		Retourne une liste des IDs des capteurs
 		'''
-		self.do_autologin ()
-		r = self.base_url + self.sensors_list
-		a = self.bytes2file (self.opener.open (r).read ())
-		b = ET.parse (a)
+		r = base_url + sensors_list
+		a = bytes2file (self.get_or_autologin (r).read ())
+		b = get_xml_tree (a)
 		r = []
-		for i in b.findall (self.sensors_label):
-			r.append (i.get (self.sensors_label_id))
+		for i in b [2]:
+			try:
+				r.append (i [1] [sensors_label_id])
+			except KeyError:
+				pass
 		return (list (r))
 	
 	def get_sensor (self, id):
 		'''
-		Returns a Sensor object for the sensor id or None if sensor is not found
-		The available ids can be got from the list_sensors method
+		Retourne un objet Sensor à partir de l'ID
 		'''
-		self.do_autologin ()
-		r = Sensor (id, self.opener)
+		r = Sensor (id, self.get_or_autologin)
 		r.refresh ()
 		return (r)
 	
 	def get_all_sensors (self):
 		'''
-		Returns a tuple of sensors as described in the get_sensor method
+		Retourne un tuple d'objet Sensor contenant tous les capteurs
 		'''
 		r = []
 		for i in self.list_sensors ():
 			r.append (self.get_sensor (i))
 		return (tuple (r))
-	
-	def get_camera (self, id):
-		'''
-		Get a Camera object from the sensor's id
-		'''
-		self.do_autologin ()
-		r = Camera (id, self.opener)
-		r.refresh ()
-		return (r)
-	
-	def get_logs (self):
-		'''
-		Return the whole logs in a form of tuple of dicts, as returned by the site
-		'''
-		self.do_autologin ()
-		a = self.base_url + self.logs_path
-		return (self.get_xml_elements (a, self.logs_labels))
 
 
-class Sensor (Common):
-	'''
-	Class used to read easily the sensors
-	'''
-	def __init__ (self, id, opener):
-		'''
-		Initialize the class with the dict producted by HomeSFR.get_sensors ()
-		'''
-		Common.__init__ (self)
+class Sensor ():
+	def __init__ (self, id, get_or_autologin):
 		
 		self.id = id
 		self.sensor_dict = None
-		self.opener = opener
+		self.get_or_autologin = get_or_autologin
 	
 	def refresh (self):
 		'''
-		Gets or refresh the data for the sensor
+		Mets à jour les données du capteur
 		'''
 		
-		r = self.base_url + self.sensors_list
+		r = base_url + sensors_list
 		self.sensor_dict = None
-		self.sensor_dict = self.get_xml_elements (r, self.sensors_label, self.sensors_label_id) [self.id]
+		for i in get_xml_tree (bytes2file (self.get_or_autologin (r).read ())) [2]:
+			if i [0] == sensors_label and i [1] [sensors_label_id] == self.id:
+				self.sensor_dict = i [2]
+				break
 	
 	def get_raw (self):
 		'''
-		Returns the raw dict, as presented in the original XML file
+		Retourne les données brutes du capteur
 		'''
 		return (self.sensor_dict)
 	
+	def get_value (self, lst, key):
+		for i in lst:
+			if i [0] == key:
+				return (i [2])
+		raise KeyError ()
+	
 	def get_mac (self):
 		'''
-		Returns the sensor's model, if any, None either
+		Retourne l'adresse matérielle du capteur, s'il en a une
 		'''
-		return (self.sensor_dict [self.sensors_mac_field])
+		return (self.get_value (self.sensor_dict, sensors_mac_field))
 	
 	def get_type (self):
 		'''
-		Returns the sensor's type
+		Retourne le type du capteur
+		Les types sont ceux définis dans les constantes
 		'''
-		return (self.sensor_dict [self.sensors_type_field])
+		return (self.get_value (self.sensor_dict, sensors_type_field))
 	
 	def get_model (self):
 		'''
-		Returns the sensor's model, if any, None either
+		Retourne le modèle du capteur
 		'''
-		return (self.sensor_dict [self.sensors_model_field])
+		return (self.get_value (self.sensor_dict, sensors_model_field))
 	
 	def get_version (self):
 		'''
-		Returns the sensor's version
+		Retourne la version du capteur
 		'''
-		return (self.sensor_dict [self.sensors_version_field])
+		return (self.get_value (self.sensor_dict, sensors_version_field))
 	
 	def get_name (self):
 		'''
-		Returns the sensor's name
+		Retourne le nom du capteur
 		'''
-		return (self.sensor_dict [self.sensors_name_field])
+		return (self.get_value (self.sensor_dict, sensors_name_field))
 	
 	def get_longname (self):
 		'''
-		Returns the sensor's type name in system's language and the sensor's name
+		Retourne un nom long du capteur composé de son type en français et de son nom
 		'''
-		return (self.sensor_dict [self.sensors_longname_field])
+		return (self.get_value (self.sensor_dict, sensors_longname_field))
 	
 	def get_namegender (self):
 		'''
-		Return M for male and F for female.
-		Only usefull for languages with gender on nouns
+		Retourne le genre du nom du type de capteur en français
+		M pour masculin et F pour féminin
 		'''
-		return (self.sensor_dict [self.sensors_namegender_field])
+		return (self.get_value (self.sensor_dict, sensors_namegender_field))
 	
 	def get_batterylevel (self):
 		'''
-		Returns the sensor's battery level, out of 10
-		It seems that batteryless sensors return 255
+		Retourne le niveau de batterie sur 10
+		Toute autre valeur doit être considérée comme venant d'un capteur n'ayant pas de batterie
 		'''
-		return (int (self.sensor_dict [self.sensors_batterylevel_field]))
+		return (int (self.get_value (self.sensor_dict, sensors_batterylevel_field)))
 	
 	def get_signal (self):
 		'''
-		Returns the sensor's signal quality, out of 10
+		Retourne le niveau de signal sur 10
+		Tout autre valeur est pour un capteur connecté par câble
 		'''
-		return (int (self.sensor_dict [self.sensors_signal_field]))
-	
-	def get_lasttrigger (self):
-		'''
-		Return the timestamp of the sensor's last triger
-		The sensors always trigger, even when the alarm's mode is off
-		'''
-		a = self.sensor_dict [self.sensors_lasttrigger_field]
-		# Try because camera return the date '0000-00-00 00:00:00' that is ununderstandable
-		try:
-			b = datetime.strptime (a, self.sensors_lasttrigger_dateformat)
-		except ValueError:
-			return (0)
-		r = int (b.timestamp ())
-		return (r)
+		return (int (self.get_value (self.sensor_dict, sensors_signal_field)))
 	
 	def get_status (self):
 		'''
-		Returns True is the sensor is OK, False either
+		Retourne True si le capteur est considéré comme opérationnel par le système
 		'''
-		return (self.sensor_dict [self.sensors_status_field] == self.sensors_status_value_ok)
+		return (self.get_value (self.sensor_dict, sensors_status_field) == sensors_status_value_ok)
 	
 	def get_camera_snapshot (self):
 		'''
-		Get a snapshot from the camera
-		Return a PIL.Image object
+		Retourne une capture de la caméra dans un objet PIL.Image
 		'''
-		r = self.base_url + self.camera_snapshot + '?' + self.camera_snapshot_mac + '=' + self.get_mac ()
-		a = self.bytes2image (self.opener.open (r).read ())
+		r = base_url + camera_snapshot + '&' + camera_snapshot_mac + '=' + self.get_mac ()
+		a = bytes2image (self.get_or_autologin (r).read ())
 		return (a)
 	
 	def get_camera_petmode (self):
@@ -497,16 +442,16 @@ class Sensor (Common):
 		Gets the pet mode value
 		Pet mode is a setting on movement sensibility, to avoid trigger on pet movements
 		'''
-		return (self.sensor_dict [self.camera_get_config_petmode] == '1')
+		return (self.sensor_dict [camera_get_config_petmode] == '1')
 	
 	def get_camera_recording (self):
 		'''
 		Gets if the camera records or not
 		'''
-		return (self.sensor_dict [self.camera_get_config_recording] == '1')
+		return (self.sensor_dict [camera_get_config_recording] == '1')
 	
 	def get_camera_privacy (self):
 		'''
 		Gets if the camera records or not
 		'''
-		return (self.sensor_dict [self.camera_get_config_privacy] == '1')
+		return (self.sensor_dict [camera_get_config_privacy] == '1')
