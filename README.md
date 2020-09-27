@@ -1,13 +1,13 @@
-# What's this?
+# Qu'est-ce que c'est ?
 
-This is a set of libraries to control your Home by SFR account.
-They all work around the website.
+Il s'agit d'une bibliothèque qui permet d'accéder au système Home by SFR.  
+Le code s'appuie sur les appels fait sur le [site](https://home.sfr.fr). De fait, sa conception a été faite par rétro-ingénérie et peut cesser de fonctionner sans préavis.
 
-# What's Home by SFR?
+# Qu'est-ce que Home by SFR ?
 
-Home by SFR is a security and automation service provided by the French Internet provider SFR.
-The library was only tested for the French version because I don't know if it exists elsewhere
+Home by SFR est un service de sécurité et de domotique fourni par SFR.  
+Cette bibliothèque ne peut utiliser que le service fourni par SFR en France.
 
 # Licence
 
-These libraries are under GNU GPL v3.
+Voir la [licence](LICENSE) pour plus de détails.
