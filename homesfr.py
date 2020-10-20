@@ -28,6 +28,8 @@ SIREN = 'SIREN'						# https://boutique.home.sfr.fr/sirene-interieure (et peut-�
 REMOTE_CONTROLER = 'REMOTE'				# https://boutique.home.sfr.fr/telecommande
 KEYPAD_CONTROLER = 'KEYPAD'				# https://boutique.home.sfr.fr/clavier-de-commande
 PRESENCE_CAMERA_DETECTOR = 'PIR_CAMERA'			# https://boutique.home.sfr.fr/camera
+TEMPHUM_SENSOR = 'TEMP_HUM'				# https://boutique.home.sfr.fr/thermometre
+ONOFF_PLUG = 'ON_OFF_PLUG'				# https://boutique.home.sfr.fr/prise-commandee-connectee-legrand
 
 base_url = 'https://home.sfr.fr'
 
@@ -56,7 +58,7 @@ mode_off = 'OFF'					# Value for off
 mode_custom = 'CUSTOM'					# Value for custom
 mode_on = 'ON'						# Value for on
 
-# Cémera
+# Caméra
 cameras_list = '/homescope/mycams'
 camera_snapshot = '/homescope/snapshot?size=4'
 camera_snapshot_mac = 'mac'
@@ -106,6 +108,11 @@ sensors_temp_name = 'name'
 sensors_temp_text = 'Temperature'
 sensors_hum_name = 'name'
 sensors_hum_text = 'Humidity'
+
+# Prise connectée (ON_OFF_PLUG)
+sensors_oop_stateroot = 'automation'
+sensors_oop_state = 'on_off'
+sensors_oop_power = 'power_level'
 
 # Fil d'événements
 logs_path = '/getlog?page=1&nbparpage=10000'		# je pense qu'on récupère tous les événements avec cette valeur
@@ -366,11 +373,17 @@ class Sensor ():
 		'''
 		return (self.sensor_dict)
 	
+	def get_attributes (self, lst, key):
+		for i in lst:
+			if i [0] == key:
+				return (i [1])
+		raise KeyError ('no key ' + key)
+	
 	def get_value (self, lst, key):
 		for i in lst:
 			if i [0] == key:
 				return (i [2])
-		raise KeyError ('no value ' + key)
+		raise KeyError ('no key ' + key)
 	
 	def get_mac (self):
 		'''
@@ -480,3 +493,17 @@ class Sensor ():
 		for i in a:
 			if i [1] [sensors_hum_name] == sensors_hum_text:
 				return (int (i [2].replace ('%', '')))
+	
+	def get_on_off_state (self):
+		'''
+		Retourne l'état d'une prise connectée, True sur la prise est fermée
+		'''
+		a = self.get_attributes (self.sensor_dict, sensors_oop_stateroot)
+		return (True if a [sensors_oop_state] == '1' else False)
+	
+	def get_on_off_power (self):
+		'''
+		Retourne la puissance active qui traverse la prise, en watts
+		'''
+		a = self.get_attributes (self.sensor_dict, sensors_oop_stateroot)
+		return (int (a [sensors_oop_power]))
