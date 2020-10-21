@@ -113,6 +113,11 @@ sensors_hum_text = 'Humidity'
 sensors_oop_stateroot = 'automation'
 sensors_oop_state = 'on_off'
 sensors_oop_power = 'power_level'
+sensors_oop_control = '/plugcontrol'
+sensors_oop_control_sensors_id_field = 'uid'
+sensors_oop_control_action_field = 'action'
+sensors_oop_control_action_value_on = 'on'
+sensors_oop_control_action_value_off = 'off'
 
 # Fil d'événements
 logs_path = '/getlog?page=1&nbparpage=10000'		# je pense qu'on récupère tous les événements avec cette valeur
@@ -389,8 +394,6 @@ class HomeSFR ():
 				print ('Vous devriez utiliser les constantes MODE_OFF, MODE_ON et MODE_CUSTOM.')
 			raise ValueError
 		r = base_url + mode_set_path + '?' + mode_set_field + '=' + m
-		if self.DEBUG:
-			print ('Demande ' + r)
 		self.get_or_autologin (r)
 		return (True)
 	
@@ -589,6 +592,13 @@ class Sensor ():
 		'''
 		a = self.get_attributes (self.get_raw (), sensors_oop_stateroot)
 		return (True if a [sensors_oop_state] == '1' else False)
+	
+	def set_on_off_state (self, state):
+		'''
+		Défini l'état d'une prise connectée, True pour fermer la prise
+		'''
+		r = base_url + sensors_oop_control + '?' + sensors_oop_control_sensors_id_field + '=' + self.id + '&' + sensors_oop_control_action_field + '=' + (sensors_oop_control_action_value_on if state else sensors_oop_control_action_value_off)
+		self.get_or_autologin (r)
 	
 	def get_on_off_power (self):
 		'''
