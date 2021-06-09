@@ -584,7 +584,7 @@ class Sensor ():
 		a = self.get_value (self.get_raw (), sensors_temphum_root_field)
 		for i in a:
 			if i [1] [sensors_hum_name] == sensors_hum_text:
-				return (int (i [2].replace ('%', '')))
+				return (float (i [2].replace ('%', '')))
 	
 	def get_on_off_state (self):
 		'''
