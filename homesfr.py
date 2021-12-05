@@ -11,7 +11,7 @@ from urllib.error import HTTPError
 from time import time
 
 authors = (
-	'Gilles "Almtesh" Émilien MOREL',
+	'Sasha "Almtesh" Évan MOREL',
 )
 name = 'homesfr pour Python 3'
 version = '1.4'
