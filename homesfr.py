@@ -14,7 +14,7 @@ authors = (
 	'Sasha "Almtesh" Évan MOREL',
 )
 name = 'homesfr pour Python 3'
-version = '1.4'
+version = '1.5'
 
 # Modes utilisables
 MODE_OFF = 0
@@ -272,6 +272,7 @@ class HomeSFR ():
 				print ('initalisé avec l\'identifiant ' + username)
 			if cookies is not None:
 				print ('initialisé avec des cookies')
+				print ('Cookies ' + str (len (cookies)))
 			print ('debug = ' + str (debug))
 			print ('autologin = ' + str (autologin))
 		
@@ -285,10 +286,8 @@ class HomeSFR ():
 			self.autologin = False
 		if cookies is None:
 			self.cookies = CookieJar ()
-		elif type (cookies) == CookieJar:
-			self.cookies = cookies
 		else:
-			raise TypeError ('Les cookies doivent être de type CookieJar !')
+			self.cookies = cookies
 		self.opener = request.build_opener (request.HTTPCookieProcessor (self.cookies))
 		self.mysensors = self.MySensors (self)
 	
